@@ -82,12 +82,13 @@ class DraftResult:
 
 class Matchup:
     def __init__(self, json):
-        self.week = json['week']
+        self.json = json
+        self.week = int(json['week'])
         self.week_start = json['week_start']
         self.week_end = json['week_end']
         self.status = json['status']
-        self.is_playoffs = json['is_playoffs']
-        self.is_consolation = json['is_consolation']
+        self.is_playoffs = int(json['is_playoffs'])
+        self.is_consolation = int(json['is_consolation'])
         self.stat_winners = json.get('stat_winners')
         self.is_matchup_recap_available = json.get('is_matchup_recap_available')
         self.matchup_recap_url = json.get('matchup_recap_url')

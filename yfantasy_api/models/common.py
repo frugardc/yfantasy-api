@@ -53,6 +53,9 @@ class Team:
     def __parse_team_stats(self, json):
         self.stats = {d['stat']['stat_id']: d['stat']['value'] for d in json['stats']}
 
+    def __repr__(self):
+        return self.info.name
+
 
 class TeamInfo:
     def __init__(self, json):
