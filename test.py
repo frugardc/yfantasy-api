@@ -183,43 +183,80 @@ def get_career_statistics():
     return career_statistics
 
 if __name__ == '__main__':
+    champs = {}
+    for team, defences, streak in [('Trevor', 0, 'Week 1 (2015) - Week 2 (2015)'), ('Joe', 1, 'Week 2 (2015) - Week 4 (2015)'), ('Ryan', 0, 'Week 4 (2015) - Week 5 (2015)'), ('Travis', 0, 'Week 5 (2015) - Week 6 (2015)'), ('Joe', 0, 'Week 6 (2015) - Week 7 (2015)'), ('Brad', 2, 'Week 7 (2015) - Week 10 (2015)'), ('Mason', 5, 'Week 10 (2015) - Week 16 (2015)'), ('Travis', 5, 'Week 16 (2015) - Week 22 (2015)'), ('Brad', 2, 'Week 22 (2015) - Week 3 (2016)'), ('Fabian', 0, 'Week 3 (2016) - Week 4 (2016)'), ('Richard', 0, 'Week 4 (2016) - Week 5 (2016)'), ('Ryan', 0, 'Week 5 (2016) - Week 6 (2016)'), ('Travis', 0, 'Week 6 (2016) - Week 7 (2016)'), ('Richard', 3, 'Week 7 (2016) - Week 11 (2016)'), ('Fabian', 0, 'Week 11 (2016) - Week 12 (2016)'), ('Trevor', 0, 'Week 12 (2016) - Week 13 (2016)'), ('Richard', 3, 'Week 13 (2016) - Week 17 (2016)'), ('Mason', 0, 'Week 17 (2016) - Week 18 (2016)'), ('Ryan', 1, 'Week 18 (2016) - Week 20 (2016)'), ('Travis', 2, 'Week 20 (2016) - Week 2 (2017)'), ('Fabian', 0, 'Week 2 (2017) - Week 3 (2017)'), ('Richard', 0, 'Week 3 (2017) - Week 4 (2017)'), ('Trevor', 2, 'Week 4 (2017) - Week 7 (2017)'), ('Joe', 2, 'Week 7 (2017) - Week 10 (2017)'), ('Mason', 2, 'Week 10 (2017) - Week 13 (2017)'), ('Ryan', 1, 'Week 13 (2017) - Week 15 (2017)'), ('Hogan', 0, 'Week 15 (2017) - Week 16 (2017)'), ('Reid', 0, 'Week 16 (2017) - Week 17 (2017)'), ('Joe', 4, 'Week 17 (2017) - Week 1 (2018)'), ('Mason', 0, 'Week 1 (2018) - Week 2 (2018)'), ('Ryan', 0, 'Week 2 (2018) - Week 3 (2018)'), ('Richard', 2, 'Week 3 (2018) - Week 6 (2018)'), ('Fabian', 1, 'Week 6 (2018) - Week 8 (2018)'), ('Ryan', 2, 'Week 8 (2018) - Week 11 (2018)'), ('Mason', 0, 'Week 11 (2018) - Week 12 (2018)'), ('Chay', 2, 'Week 12 (2018) - Week 15 (2018)'), ('Ryan', 1, 'Week 15 (2018) - Week 17 (2018)'), ('Fabian', 1, 'Week 17 (2018) - Week 19 (2018)'), ('Travis', 0, 'Week 19 (2018) - Week 20 (2018)'), ('Trevor', 2, 'Week 20 (2018) - Week 2 (2019)'), ('Richard', 2, 'Week 2 (2019) - Week 5 (2019)'), ('Mason', 2, 'Week 5 (2019) - Week 8 (2019)'), ('Fabian', 0, 'Week 8 (2019) - Week 9 (2019)'), ('Ryan', 0, 'Week 9 (2019) - Week 10 (2019)'), ('Trevor', 1, 'Week 10 (2019) - Week 12 (2019)'), ('Travis', 0, 'Week 12 (2019) - Week 13 (2019)'), ('Hogan', 1, 'Week 13 (2019) - Week 15 (2019)'), ('Fabian', 1, 'Week 15 (2019) - Week 17 (2019)'), ('Mason', 0, 'Week 17 (2019) - Week 18 (2019)'), ('Trevor', 8, 'Week 18 (2019) - Week 6 (2020)'), ('Kyle', 6, 'Week 6 (2020) - Current')]:
+        print(team, streak, f'({defences} defences)')
+        if team not in champs:
+            champs[team] = {'wins': 0, 'defences': 0, 'held': 0}
+        champs[team]['wins'] += 1
+        champs[team]['defences'] += defences
+        champs[team]['held'] += (defences + 1)
+    print()
+    total_held = 0
+    for team, data in champs.items():
+        print(team, data)
+        total_held += data['held']
+    print(total_held)
+    #exit()
+
+    losses = {}
     data = []
+    champ_year = champ_week = 0
     champion = None
     defences = 0
     for game in GAMES_LIST:
-        mappings = game.get('mapping', {}) | MASTER_MAPPING
+        mappings = game.get('mappings', {}) | MASTER_MAPPING
         api = YahooFantasyApi(game['league_id'], game['game_code'])
+        year = game['year']
+
+        teams = api.league().teams().get().teams
+        league_teams = {mappings.get(team.info.managers[0].nickname, team.info.managers[0].nickname): team.info.team_key for team in teams}
+        #print(league_teams)
         game_weeks = ','.join([g.week for g in api.game().game_weeks().get().game_weeks])
         matchups = api.league().scoreboard(week=game_weeks).get().matchups
-
-        current_week = 1
+        weekly_matchups = {}
         for matchup in matchups:
-            print(f'Week: {matchup.week}')
+            if matchup.week not in weekly_matchups:
+                weekly_matchups[matchup.week] = []
+            weekly_matchups[matchup.week].append(matchup)
+
+        for week, matchups in weekly_matchups.items():
             if not champion:
                 teams = [team for teams in [matchup.teams for matchup in matchups] for team in teams]
-                champion = sorted(teams, key=lambda x: x.team_points)[0].team
-                print(champion)
-                current_week += 1
-                continue
-            
-            if matchup.is_playoffs:
+                manager = sorted(teams, key=lambda x: x.team_points, reverse=True)[0].team.info.managers[0]
+                champion = mappings.get(manager.nickname, manager.nickname)
+                champ_year = year
+                champ_week = week
                 continue
 
-            if matchup.week < current_week:
-                continue
+            for matchup in matchups:
+                if matchup.is_playoffs:
+                    continue
 
-            winning_team = [t.team for t in matchup.teams if t.team.info.team_key == matchup.winner_team_key][0]
-            losing_team = [t.team for t in matchup.teams if t.team.info.team_key != matchup.winner_team_key][0]
-            if winning_team.info.team_key == champion.info.team_key:
-                defences += 1
-            elif losing_team.info.team_key == champion.info.team_key:
-                data.append((champion, defences))
-                champion = winning_team
-                defences = 0
-            else:
-                continue
-            current_week += 1
-        print(data)
+                winning_team = [t.team for t in matchup.teams if t.team.info.team_key == matchup.winner_team_key][0]
+                losing_team = [t.team for t in matchup.teams if t.team.info.team_key != matchup.winner_team_key][0]
+                winning_mgr = mappings.get(winning_team.info.managers[0].nickname, winning_team.info.managers[0].nickname)
+                losing_mgr = mappings.get(losing_team.info.managers[0].nickname, losing_team.info.managers[0].nickname)
+
+                if winning_team.info.team_key == league_teams[champion]:
+                    if losing_mgr not in losses:
+                        losses[losing_mgr] = 0
+                    losses[losing_mgr] += 1
+                    defences += 1
+                elif losing_team.info.team_key == league_teams[champion]:
+                    if losing_mgr not in losses:
+                        losses[losing_mgr] = 0
+                    losses[losing_mgr] += 1
+                    data.append((champion, defences, f'Week {champ_week} ({champ_year}) - Week {week} ({year})'))
+                    champion = mappings.get(winning_team.info.managers[0].nickname, winning_team.info.managers[0].nickname)
+                    champ_week = week
+                    champ_year = year
+                    defences = 0
+                else:
+                    continue
+    data.append((champion, defences, f'Week {champ_week} ({champ_year}) - Current'))
+    print(data)     
+    print(losses)   
             
             
 
