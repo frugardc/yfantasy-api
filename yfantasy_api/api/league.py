@@ -51,7 +51,7 @@ class LeagueApi:
         """
         return TerminalApi(self)
 
-    def players(self, start=0, count=25, status=None, search=None):
+    def players(self, start=0, count=25, status=None, search=None, player_keys=None):
         """Updates the path to include the `players` sub-resource
 
         Returns a PlayersCollectionApi object that provides methods
@@ -86,6 +86,9 @@ class LeagueApi:
 
         if status:
             self.path += f';status={status}'
+            
+        if player_keys:
+            self.path += f';player_keys={player_keys}'
 
         return PlayersCollectionApi(self)
 
